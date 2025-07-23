@@ -9,7 +9,7 @@ https://your-demo-link.com *(replace with actual link)*
 
 ## 📸 Preview
 
-![Editor Preview](./screenshot.png) *(Add a screenshot of your editor interface)*
+![Editor Preview](./public/image.png) *(Add a screenshot of your editor interface)*
 
 ---
 
