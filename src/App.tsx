@@ -1,37 +1,56 @@
+import { lazy, Suspense } from "react";
+import { useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import * as monaco from "monaco-editor";
+import Dracula from "monaco-themes/themes/Dracula.json";
+
+import type { OnMount } from "@monaco-editor/react";
+import type { RootState } from "./Store/Store";
+
 import {
   setSelectedFile,
   updateActiveFileContent,
 } from "./Store/FileFeatures/FileSlice";
-import File from "./components/File";
-import type { RootState } from "./Store/Store";
+
 import OpenFilesBar from "./components/OpendFilesBar";
-import Editor from "@monaco-editor/react";
-import type { OnMount } from "@monaco-editor/react";
-import { getFileByExtension, getLanguageFromFileName } from "./utils";
-import * as monaco from "monaco-editor";
-import Dracula from "monaco-themes/themes/Dracula.json";
-import Preview from "./components/Preview";
 import ImgIcon from "./components/ImgIcon";
-import MyModal from "./components/Modal";
-import { useState } from "react";
-import ResizePanel from "./components/ResizePanel"; // ✅ تأكد إن المسار صح
+
+import ResizePanel from "./components/ResizePanel";
+
+import { getFileByExtension, getLanguageFromFileName } from "./utils";
+
+const Editor = lazy(() => import("@monaco-editor/react"));
+const Preview = lazy(() => import('./components/Preview'));
+const MyModal = lazy(() => import('./components/Modal'));
+const File = lazy(() => import('./components/File'));
+
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const dispatch = useDispatch();
+
   const { fileTree, ActiveLink, fileTabs } = useSelector(
     (state: RootState) => state.fileSlice
   );
 
-  const handleEditorMount: OnMount = (_, monacoInstance) => {
+  const handleEditorMount: OnMount = useCallback((_, monacoInstance) => {
     monacoInstance.editor.defineTheme(
       "Dracula",
       Dracula as monaco.editor.IStandaloneThemeData
     );
     monacoInstance.editor.setTheme("Dracula");
-  };
+  }, []);
+
+  const handleEditorChange = useCallback(
+    (value: string | undefined) => {
+      dispatch(updateActiveFileContent(value || ""));
+    },
+    [dispatch]
+  );
+
+  const handlePlayClick = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col">
@@ -48,49 +67,53 @@ function App() {
           }
           rightPanel={
             <div className="flex flex-col h-full">
-              <div
-                className={`bg-[#2727357a] border-b border-gray-700 flex items-center px-3 ${
-                  fileTabs.length ? "py-1" : ""
-                }`}
-              >
-                <OpenFilesBar />
-              </div>
+              {fileTabs.length > 0 && (
+                <div className="bg-[#2727357a] border-b border-gray-700 px-3 py-1">
+                  <OpenFilesBar />
+                </div>
+              )}
 
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 {ActiveLink?.id ? (
                   <>
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => setIsModalOpen(true)}
+                    <button
+                      onClick={handlePlayClick}
+                      className="fixed z-50 right-5 top-4"
+                      aria-label="Run Preview"
+                      title="Run Preview"
                     >
                       <ImgIcon
                         src="play-svgrepo-com.svg"
-                        className="w-[20px] h-[20px] fixed z-50 right-5 top-4"
+                        className="w-[20px] h-[20px]"
                       />
-                    </div>
-                    <Editor
-                      height="100%"
-                      language={getLanguageFromFileName(ActiveLink.name)}
-                      value={ActiveLink.content}
-                      onMount={handleEditorMount}
-                      onChange={(value) =>
-                        dispatch(updateActiveFileContent(value || ""))
+                    </button>
+                    <Suspense
+                      fallback={
+                        <div className="text-white p-4">Loading Editor...</div>
                       }
-                      theme="Dracula"
-                      options={{
-                        fontSize: 20,
-                        fontFamily: "monospace",
-                        automaticLayout: true,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                      }}
-                    />
+                    >
+                      <Editor
+                        height="100%"
+                        language={getLanguageFromFileName(ActiveLink.name)}
+                        value={ActiveLink.content}
+                        onMount={handleEditorMount}
+                        onChange={handleEditorChange}
+                        theme="Dracula"
+                        options={{
+                          fontSize: 20,
+                          fontFamily: "monospace",
+                          automaticLayout: true,
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                        }}
+                      />
+                    </Suspense>
                   </>
                 ) : (
-                  <div className="text-gray-400 p-4 h-full  flex items-center justify-center">
+                  <div className="text-gray-400 p-4 h-full flex items-center justify-center">
                     <ImgIcon
                       src="icons/vscode.svg"
-                      alt="welcom VS code"
+                      alt="Welcome VSCode"
                       className="w-60 h-60"
                     />
                   </div>
@@ -101,21 +124,18 @@ function App() {
         />
       </div>
 
-      {/* Preview Section */}
-      <div className="rounded-md bg-gray-800 mt-10">
-        <MyModal isOpen={isModalOpen} close={() => setIsModalOpen(false)}>
-          <Preview
-            html={getFileByExtension(fileTabs, ".html")}
-            css={getFileByExtension(fileTabs, ".css")}
-            js={getFileByExtension(fileTabs, ".js")}
-          />
-        </MyModal>
-      </div>
+      <MyModal isOpen={isModalOpen} close={() => setIsModalOpen(false)}>
+        <Suspense fallback={<div>Loading...</div>}>
+
+        <Preview
+          html={getFileByExtension(fileTabs, ".html")}
+          css={getFileByExtension(fileTabs, ".css")}
+          js={getFileByExtension(fileTabs, ".js")}
+        />
+      </Suspense>
+      </MyModal>
     </div>
   );
 }
 
 export default App;
-
-
-

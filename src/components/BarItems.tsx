@@ -4,6 +4,7 @@ import ImgIcon from "./ImgIcon";
 import RenderFileIcon from "./SVG/RenderFileIcons";
 import { removeFileTab, setActiveLink } from "../Store/FileFeatures/FileSlice";
 import type { RootState } from "../Store/Store";
+import { memo, useCallback } from "react";
 
 interface BarItemsProps {
   file: IFileTree;
@@ -14,15 +15,18 @@ function BarItems({ file }: BarItemsProps) {
   const { ActiveLink } = useSelector((state: RootState) => state.fileSlice);
 
 
-  const onRemove = (id: string) => {
+  const onRemove = useCallback((id: string,) => {
     dispatch(removeFileTab(id)); 
-  }
+  }, [dispatch]);
+
+  const handleClick = useCallback(() => {
+  dispatch(setActiveLink(file));
+}, [dispatch, file]);
+
 
   return (
     <div
-      onClick={() => {
-        dispatch(setActiveLink(file));
-      }}
+      onClick={handleClick}
       className={`py-2 rounded-md flex items-center gap-1 hover:bg-[#2b2b3a8e] px-2 ${
         ActiveLink?.id == file.id ? "border-t-3 border-fuchsia-700" : ""
       } `}
@@ -34,9 +38,10 @@ function BarItems({ file }: BarItemsProps) {
       <span
         className="text-gray-500 ml-1"
         onClick={(e) => {
-          e.stopPropagation();
+          e.stopPropagation(); 
           onRemove(file.id)
-        }}
+        }
+        }
       >
         <ImgIcon src="cancel-svgrepo-com.svg" className="w-[20px] h-[20px]" />
       </span>
@@ -44,4 +49,4 @@ function BarItems({ file }: BarItemsProps) {
   );
 }
 
-export default BarItems;
+export default memo(BarItems);

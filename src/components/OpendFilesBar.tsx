@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import type { RootState } from "../Store/Store";
 import BarItems from "./BarItems";
+import { memo } from "react";
 
 function OpenFilesBar() {
   const { fileTabs } = useSelector(
@@ -17,4 +18,4 @@ function OpenFilesBar() {
   );
 }
 
-export default OpenFilesBar;
+export default memo(OpenFilesBar);
