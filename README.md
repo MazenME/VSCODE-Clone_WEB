@@ -42,6 +42,7 @@ https://your-demo-link.com *(replace with actual link)*
 - **React**
 - **Redux Toolkit**
 - **Monaco Editor**
+- **Monaco Themes**
 - **Tailwind CSS**
 - **React-Resizable-Panels**
 - **uuid**
